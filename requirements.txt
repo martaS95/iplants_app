@@ -1,0 +1,8 @@
+pandas==1.3.5
+cobra==0.25.0
+cplex==22.1.0.0
+cobamp==0.2.1
+troppo==0.0.6
+jupyter==1.0.0
+seaborn==0.12.2
+numpy==1.22.4
