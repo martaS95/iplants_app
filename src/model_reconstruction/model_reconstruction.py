@@ -1,10 +1,11 @@
 import os
 import logging
-import requests
-import datetime
 import re
 import json
+import datetime
 from collections import defaultdict
+from typing import List, Union, Dict, Any, Tuple, Optional
+import requests
 import pandas as pd
 from Bio import SeqIO
 from cobra import Model as CobraModel
@@ -12,7 +13,6 @@ from cobra import Reaction as CobraReaction
 from cobra import Metabolite as CobraMetabolite
 from cobra.core import Group as CobraGroup
 from cobra.io import write_sbml_model
-from typing import List, Union, Dict, Any, Tuple, Optional
 from ebiomass import BiomassFromGenome
 from diamond import Diamond
 from compartments import Compartments
@@ -88,14 +88,14 @@ class ModelReconstruction:
         r_mongo = requests.get(url_mongo)
 
         if r_mongo.status_code == 200:
-            logging.info('Metabolic model document for ' + str(modelid) + ' was created!')
+            logging.info('Metabolic model document for ' + str(self.model_id) + ' was created!')
         else:
             logging.info('An error has occurred when connecting to the mongodb API')
 
         r_neo = requests.get(url_neo)
 
         if r_neo.status_code == 200:
-            logging.info('Metabolic model node for ' + str(modelid) + ' was created!')
+            logging.info('Metabolic model node for ' + str(self.model_id) + ' was created!')
         else:
             logging.info('An error has occurred when connecting to the neo4j API')
 
@@ -176,15 +176,13 @@ class ModelReconstruction:
         if not os.path.isdir(os.path.join(output_folder)):
             os.makedirs(os.path.join(output_folder))
 
-        # self.output_diamond_file = os.path.join(output_folder, 'results_' +
-        #                                         str(datetime.datetime.now().strftime("%Y%m%d_%I%M")))
-
-        self.output_diamond_file = os.path.join(output_folder, 'results_20230124_1002')
+        self.output_diamond_file = os.path.join(output_folder, 'results_' +
+                                                str(datetime.datetime.now().strftime("%Y%m%d_%I%M")))
 
         diamond_cls = Diamond(source_folder=self.genome_path, email=self.email, output_folder=self.output_diamond_file,
                               run_type=runtype)
 
-        # diamond_cls.run_diamond()
+        diamond_cls.run_diamond()
 
         self.diamond_annotation = diamond_cls.parse_results()
 
@@ -327,13 +325,13 @@ class ModelReconstruction:
             else:
                 logging.info('an error has occurred connectiong to the neo4j API')
 
-            # url_mongo = self.api.base_url + self.api.add_enzymes_model_mongo + self.model_id + '/' + enzymes
-            # r_mongo = requests.get(url_mongo)
-            #
-            # if r_mongo.status_code == 200:
-            #     logging.info('the enzyme list was added to the metabolic model document')
-            # else:
-            #     logging.info('an error has occurred connectiong to the mongo API')
+            url_mongo = self.api.base_url + self.api.add_enzymes_model_mongo + self.model_id + '/' + enzymes
+            r_mongo = requests.get(url_mongo)
+
+            if r_mongo.status_code == 200:
+                logging.info('the enzyme list was added to the metabolic model document')
+            else:
+                logging.info('an error has occurred connectiong to the mongo API')
 
         else:
             logging.info('No enzymes in the model')
@@ -381,13 +379,13 @@ class ModelReconstruction:
             else:
                 logging.info('an error has occurred connectiong to the neo4j API')
 
-            # url_mongo = self.api.base_url + self.api.add_metabolites_model_mongo + self.model_id + '/' + metabolites
-            # r_mongo = requests.get(url_mongo)
-            #
-            # if r_mongo.status_code == 200:
-            #     logging.info('the metabolite list was added to the metabolic model document')
-            # else:
-            #     logging.info('an error has occurred connectiong to the mongo API')
+            url_mongo = self.api.base_url + self.api.add_metabolites_model_mongo + self.model_id + '/' + metabolites
+            r_mongo = requests.get(url_mongo)
+
+            if r_mongo.status_code == 200:
+                logging.info('the metabolite list was added to the metabolic model document')
+            else:
+                logging.info('an error has occurred connectiong to the mongo API')
 
         else:
             logging.info('No metabolites in the model')
@@ -706,7 +704,7 @@ class ModelReconstruction:
         """
         Add biomass reactions to the databases
         """
-        reaction_path = os.path.join(PROJECT_PATH, 'reconstruction_results', modelid, 'biomass.json')
+        reaction_path = os.path.join(PROJECT_PATH, 'reconstruction_results', self.model_id, 'biomass.json')
 
         try:
             reaction_file = open(reaction_path, 'rb')
@@ -736,7 +734,7 @@ class ModelReconstruction:
         """
         Add drain reactions to the databases
         """
-        reaction_path = os.path.join(PROJECT_PATH, 'reconstruction_results', modelid, 'drains.json')
+        reaction_path = os.path.join(PROJECT_PATH, 'reconstruction_results', self.model_id, 'drains.json')
 
         try:
             reaction_file = open(reaction_path, 'rb')
@@ -848,7 +846,7 @@ class ModelReconstruction:
         self.gprs = gprs_list
 
         df = pd.DataFrame(gprs_list, columns=['reaction', 'rule'])
-        df.to_csv(os.path.join(PROJECT_PATH, 'reconstruction_results', modelid, 'gprs.csv'), index=False)
+        df.to_csv(os.path.join(PROJECT_PATH, 'reconstruction_results', self.model_id, 'gprs.csv'), index=False)
 
         return self.gprs
 
@@ -856,7 +854,7 @@ class ModelReconstruction:
         """
         Add gprs to the metabolic model object in monogdb
         """
-        gprs_path = os.path.join(PROJECT_PATH, 'reconstruction_results', modelid, 'gprs.csv')
+        gprs_path = os.path.join(PROJECT_PATH, 'reconstruction_results', self.model_id, 'gprs.csv')
         try:
             gprs_file = open(gprs_path, 'r')
         except FileNotFoundError:
@@ -1003,7 +1001,7 @@ class ModelReconstruction:
         """
         Add transport reactions to the databases
         """
-        transporters_path = os.path.join(PROJECT_PATH, 'reconstruction_results', modelid, 'transporters.json')
+        transporters_path = os.path.join(PROJECT_PATH, 'reconstruction_results', self.model_id, 'transporters.json')
 
         try:
             transporters_file = open(transporters_path, 'r')
@@ -1030,7 +1028,7 @@ class ModelReconstruction:
         else:
             logging.info('An error has occurred when connecting to neo4j API')
 
-        gprs_path = os.path.join(PROJECT_PATH, 'reconstruction_results', modelid, 'gprs_transporters.csv')
+        gprs_path = os.path.join(PROJECT_PATH, 'reconstruction_results', self.model_id, 'gprs_transporters.csv')
 
         try:
             gprs_file = open(gprs_path, 'r')
@@ -1317,14 +1315,13 @@ class ModelReconstruction:
         return final_dic
 
 
-if __name__ == '__main__':
-    folder = "C:/Users/BiSBII/OneDrive - Universidade do Minho (1)/PycharmProjects/grapevine_model/" \
-             "grapevine_genome_files"
-    # folder = os.getcwd()
-    mail = 'marta.sampaio.1995@gmail.com'
-    modelid = 'vvinif2023'
-    cls = ModelReconstruction(model_id=modelid, organism='Vitis vinifera', taxid=29760, author='msampaio', year=2023,
-                              email=mail, genbank_file='GCF_000003745.3_12X_genomic.gbff')
+# if __name__ == '__main__':
+#     folder = "C:/Users/BiSBII/OneDrive - Universidade do Minho (1)/PycharmProjects/grapevine_model/" \
+#              "grapevine_genome_files"
+#     mail = 'marta.sampaio.1995@gmail.com'
+#     modelid = 'vvinif2023'
+#     cls = ModelReconstruction(model_id=modelid, organism='Vitis vinifera', taxid=29760, author='msampaio', year=2023,
+#                               email=mail, genbank_file='GCF_000003745.3_12X_genomic.gbff')
     # cls.run_diamond()
     # cls.add_annotation_to_model_db()
     # cls.get_enzymes_in_model()
@@ -1378,17 +1375,7 @@ if __name__ == '__main__':
     #         final_reactions.append(reac)
     #
     # final_reactions.extend(to_add_list)
-    #
-    from src.utils.config import PROJECT_PATH, OMICS_DATADIR, Mongo, Neo
-    from mongoengine import connect
-    mongodb = Mongo()
-    connect(mongodb.database, host=mongodb.host, port=mongodb.port)
-    from plantdb_mongo.models import MetabolicModel
-    model = MetabolicModel.objects.get(model_id='vvinif2023')
-    cls.reactions = model.reactions
-    # cls.add_reacs_to_model_db()
-    cls.get_mets_from_reactions()
-    cls.add_mets_to_model_db()
+
     # cls.reactions = final_reactions
 
     # cls.create_model_in_database()

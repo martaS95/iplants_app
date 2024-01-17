@@ -1,13 +1,14 @@
-import requests
-import zipfile
-from io import BytesIO
 import os
 import logging
 import time
 import json
+import zipfile
+from io import BytesIO
+from typing import Dict, Optional
+import requests
 from Bio import SeqIO
 from Bio.Blast import NCBIXML
-from typing import Dict, Optional
+
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -117,21 +118,6 @@ class Diamond:
             logging.info('An error has occurred! Diamond results not found')
             return None
 
-        # import pandas as pd
-        # from src.utils.config import PROJECT_PATH
-        # enzs_file = pd.read_csv(os.path.join(PROJECT_PATH, 'reconstruction_results', 'vvinif2023', 'enzs_to_get.csv'),
-        #                         header=None)
-        #
-        # enzs_col = enzs_file[0].to_list()
-        # complete_list = []
-        # for line in enzs_col:
-        #     enzs = line.split(',')
-        #     for enz in enzs:
-        #         if enz not in complete_list:
-        #             complete_list.append(enz)
-        #
-        # scores = {}
-
         recs = SeqIO.parse(input_file, 'fasta')
         ids = [rec.id for rec in recs]
 
@@ -145,15 +131,7 @@ class Diamond:
             if record.alignments:
                 for align in record.alignments:
                     match = align.title[:-1]
-                    # if match in enzs_col:
-                    #     if match not in scores:
-                    #         scores[match] = {}
-                    #     for hsp in align.hsps:
-                    #         if hsp.expect < 1e-20:
-                    #             evalue = hsp.expect
-                    #             scores[match][query] = evalue
                     results[query] = match
-
             else:
                 results[query] = 'no hits'
 
@@ -163,6 +141,3 @@ class Diamond:
             json.dump(results, json_file)
 
         return results
-
-        # for k in scores:
-        #     print(k, '|', scores[k])

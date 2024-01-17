@@ -1,7 +1,6 @@
 import os.path
 from typing import List, Optional, Literal
 import pandas as pd
-import numpy as np
 import cobra.io
 
 from utils.config import PROJECT_PATH
@@ -12,7 +11,15 @@ from troppo_integration import troppo_omics_integration
 
 class OmicsIntegration:
     """
-    Class to perform omics_integration integration in metabolic models
+    Class to perform omics integration in metabolic models
+
+    This class was changed to reconstruct one model at a time, as each model had a different biomass equation and
+    medium conditions.
+
+    All tissue samples are included in the omics dataset to calculate local filters, but then each sample is used
+    to create each model individually, defining the objective and medium of each tissue
+
+    If all tissues have the same objective and medium, reconstructing all models at once is way faster.
     """
 
     def __init__(self, dataset_id: str, model_id: str, model_file: str, obj_reaction: dict, medium: dict,
@@ -21,7 +28,7 @@ class OmicsIntegration:
                  protected_reacs: dict = None, global_threshold_lower: int = 0, samples: list = None,
                  global_threshold_upper: int = 3, local_threshold: int = 4, n_threads=4, macros: dict = None):
         """
-        Initializes a Omics integration instance
+        Initializes an Omics integration instance
         Parameters
         ----------
         dataset_id: str
@@ -107,12 +114,12 @@ class OmicsIntegration:
         if not os.path.exists(self.results_path):
             os.mkdir(self.results_path)
 
-    def load_model(self, obj, model_medium, sample) -> Optional[cobra.Model]:
+    def load_model(self, obj_function, model_medium, sample) -> Optional[cobra.Model]:
         """
         This method is used to load the model and update the medium.
         Parameters
         ---------
-        obj: str
+        obj_function: str
             objective function to the model
         model_medium: dict
             model_medium exchange reactions for this sample model
@@ -131,7 +138,7 @@ class OmicsIntegration:
 
         sample_model = cobra_model.copy()
 
-        sample_model.objective = obj
+        sample_model.objective = obj_function
 
         for reaction_id, bounds in model_medium.items():
             try:
@@ -236,7 +243,7 @@ class OmicsIntegration:
         for sample in self.samples:
             objective_function = self.objective[sample]
             sample_medium = self.medium[sample]
-            template_model = self.load_model(obj=objective_function, model_medium=sample_medium, sample=sample)
+            template_model = self.load_model(obj_function=objective_function, model_medium=sample_medium, sample=sample)
 
             drains = [d.id for d in template_model.reactions if d.id.startswith('EX_')]
 
@@ -295,7 +302,7 @@ class OmicsIntegration:
         print('-------------------------------------------------------------------------------------------------------')
 
 
-def print_model_details(cobra_model):
+def print_model_details(cobra_model: cobra.Model):
     """
     Function to print the details of the currently loaded COBRA model.
 
@@ -325,7 +332,8 @@ if __name__ == '__main__':
            'berry_green': 'e-Biomass_vvinif2023__cyto', 'berry_mature': 'e-Biomass_vvinif2023_berry_mature__cyto'}
 
     protec = {'leaf': ['e-Biomass_vvinif2023_leaf__cyto'], 'stem': ['e-Biomass_vvinif2023_stem__cyto'],
-              'berry_green': ['e-Biomass_vvinif2023__cyto'], 'berry_mature': ['e-Biomass_vvinif2023_berry_mature__cyto']}
+              'berry_green': ['e-Biomass_vvinif2023__cyto'],
+              'berry_mature': ['e-Biomass_vvinif2023_berry_mature__cyto']}
 
     macro = {'leaf': ['e-Cofactor_vvinif2023_leaf__cyto'],
              'berry_mature': ['e-Carbohydrates_vvinif2023_berry_mature__cyto']}
@@ -363,7 +371,7 @@ if __name__ == '__main__':
     mediums = {'leaf': med_photo, 'stem': med_respiration, 'berry_mature': med_respiration,
                'berry_green': med_respiration}
 
-    ################################################# Default ##################################################
+    # ################################################# Default ##################################################
 
     default = OmicsIntegration(dataset_id=dataset, model_id=modelid, model_file=modelfile, obj_reaction=obj,
                                protected_reacs=protec, integration_thresholds=[6, 8, 10], medium=mediums,
@@ -412,13 +420,3 @@ if __name__ == '__main__':
                                   global_threshold_upper=ths[1], local_threshold=ths[2], macros=macro)
 
         local2.reconstruction_pipeline()
-
-    # dataset_file = 'C:/Users/BiSBII/Documents/MM_ML/data/GREAT_LOG_TPM_GSE98923_MODEL_PROTEINS_NOREPS.csv'
-    # obj = 'e-Biomass_vvinif2023__cyto'
-    # protec = ['e-Biomass_vvinif2023__cyto']
-    # local2 = OmicsIntegration(dataset_path=dataset_file, model_id=modelid, obj_reaction=obj, model_file=modelfile,
-    #                           protected_reacs=protec, integration_thresholds=[0], medium=med_respiration,
-    #                           integration_strategy='Local2', global_threshold_lower=1,
-    #                           global_threshold_upper=3, local_threshold=2)
-    #
-    # local2.reconstruction_pipeline()

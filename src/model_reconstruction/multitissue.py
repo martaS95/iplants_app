@@ -39,7 +39,7 @@ class Multitissue:
         self.dataset_id = dataset_id
 
         path = os.path.join(PROJECT_PATH, 'reconstruction_results', self.model_id, 'results_troppo', self.dataset_id,
-                            'reconstructed_models', 'TISSUE_MODELS_CHOSEN')
+                            'reconstructed_models')
 
         self.tissue_models = {k: os.path.join(path, v) for k, v in tissue_models.items()}
         self.base_tissue = base_tissue
@@ -50,7 +50,7 @@ class Multitissue:
         self.multitissue_reactions = []
 
     @staticmethod
-    def update_mets_ids(model: cobra.Model, tissue: str, pools: list):
+    def update_mets_ids(model: cobra.Model, tissue: str, pools: list) -> cobra.Model:
         """
         Method to update the identifiers of the metabolites.
         For internal metabolites, it adds '_tissue' to the id
@@ -88,7 +88,7 @@ class Multitissue:
         return model
 
     @staticmethod
-    def update_internal_reactions(model: cobra.Model, internal_reactions: list, tissue: str):
+    def update_internal_reactions(model: cobra.Model, internal_reactions: list, tissue: str) -> cobra.Model:
         """
         Update the name of internal reactions by adding '_tissue' to the reaction identifier
         Parameters
@@ -110,7 +110,7 @@ class Multitissue:
         return model
 
     @staticmethod
-    def update_drain_ids(model: cobra.Model, drains: list):
+    def update_drain_ids(model: cobra.Model, drains: list) -> cobra.Model:
         """
         Update the metabolite identifiers of drains by replacing 'extr' with 'env'
         Parameters
@@ -137,7 +137,7 @@ class Multitissue:
         return model
 
     @staticmethod
-    def update_extr_reactions(model: cobra.Model, extr_reactions: list, pools_list: list):
+    def update_extr_reactions(model: cobra.Model, extr_reactions: list, pools_list: list) -> cobra.Model:
         """
         Update the name of external reactions by adding them to all pools in pools_list
         Parameters
@@ -175,7 +175,8 @@ class Multitissue:
 
         return model
 
-    def update_extr_transporters(self, model: CobraModel, extr_transporters: list, pools_list: list, tissue: str):
+    def update_extr_transporters(self, model: CobraModel, extr_transporters: list, pools_list: list, tissue: str) -> (
+            cobra.Model):
         """
         Update the transporters that transport external metabolites from/to the env and the common pools
         Parameters
@@ -229,7 +230,7 @@ class Multitissue:
         return model
 
     @staticmethod
-    def create_total_biomass_reaction(model: cobra.Model, metabolites: dict):
+    def create_total_biomass_reaction(model: cobra.Model, metabolites: dict) -> cobra.Model:
         """
         Create the total biomass reaction that adds the biomass reactions of all tissues. It also creates the drains
         for the total biomass metabolite as well as for the tissue's biomass metabolites.
@@ -276,7 +277,7 @@ class Multitissue:
 
         return model
 
-    def add_base_tissue(self):
+    def add_base_tissue(self) -> cobra.Model:
         """
         First step in the reconstruction. Start with the model for the base tissue. The base tissue is the one that
         contacts more with the envirnoment and with the other tissues.
@@ -321,7 +322,7 @@ class Multitissue:
 
         return model_base
 
-    def add_other_tissues(self):
+    def add_other_tissues(self) -> dict:
         """
         Second step in the reconstruction. Build the models for the other tissue with the modifications in the ids that
         are needed for the final integration

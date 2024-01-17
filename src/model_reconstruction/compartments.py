@@ -1,6 +1,7 @@
 import os
 from typing import Dict
 
+
 class Compartments:
 
     def __init__(self, results_folder):

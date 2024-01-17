@@ -1,6 +1,7 @@
 import os
 import logging
 
+import cobra
 import pandas as pd
 from cobra.io import read_sbml_model, write_sbml_model
 from cobra import Reaction as CobraReaction
@@ -8,7 +9,7 @@ from cobra import Metabolite as CobraMetabolite
 from cobra import Model as CobraModel
 from cobra.core import Group as CobraGroup
 from src.utils.config import PROJECT_PATH
-from cobra.flux_analysis import pfba, flux_variability_analysis
+from cobra.flux_analysis import pfba
 
 
 class DielModel:
@@ -37,7 +38,7 @@ class DielModel:
         self.new_model = CobraModel(self.model_id)
         self.new_model.compartments = self.base_model.compartments
 
-    def replicate_reactions(self):
+    def replicate_reactions(self) -> cobra.Model:
         """
         Replicates the reactions in the model for Light and Dark conditions
         Returns
@@ -97,7 +98,7 @@ class DielModel:
 
         return self.new_model
 
-    def update_totalbiomass(self):
+    def update_totalbiomass(self) -> cobra.Model:
         """
         Creates the sum of biomass reactions for each tissue (light + dark)
         Update the totalbiomass reaction to include the created metabolites (sum biomass for each tissue)
@@ -156,7 +157,7 @@ class DielModel:
 
         return self.new_model
 
-    def add_storage_metabolites(self):
+    def add_storage_metabolites(self) -> cobra.Model:
         """
         Add the reactions for the storage of metabolites between light and dark phases
         Parameters
@@ -227,7 +228,8 @@ class DielModel:
         self.update_totalbiomass()
 
         write_sbml_model(self.new_model, os.path.join(PROJECT_PATH, 'reconstruction_results', self.model_id,
-                                                      self.multitissue_model_file.replace('.xml', '_diel.xml')))
+                                                      self.multitissue_model_file.replace('.xml',
+                                                                                          '_diel.xml')))
 
     def diel_model_simulation(self):
         """
@@ -245,9 +247,6 @@ class DielModel:
             diel_model_file = os.path.join(PROJECT_PATH, 'reconstruction_results', self.model_id,
                                            self.multitissue_model_file.replace('.xml', '_diel.xml'))
             final_model = read_sbml_model(diel_model_file)
-
-        # final_model.objective = 'EX_Light_drain_light'
-        # final_model.reactions.get_by_id('TotalBiomass').lower_bound = 0.11
 
         final_model.reactions.get_by_id('EX_Light_drain_dark').lower_bound = 0
         final_model.reactions.get_by_id('EX_Light_drain_light').lower_bound = -300
@@ -270,11 +269,6 @@ class DielModel:
         final_model.reactions.get_by_id('T_PROTON__vacu_berry_light').bounds = (0, 0)
         final_model.reactions.get_by_id('T_PROTON__vacu_berry_dark').bounds = (0, 0)
 
-        # final_model.reactions.get_by_id('EX_NITRATE_drain_light').bounds = (-0.5, -0.5)
-        # final_model.reactions.get_by_id('EX_NITRATE_drain_dark').bounds = (-0.5, -0.2)
-        # final_model.reactions.get_by_id('EX_SULFATE_drain_light').bounds = (-100, -100)
-        # final_model.reactions.get_by_id('EX_SULFATE_drain_dark').bounds = (-0.5, -0.2)
-
         final_model.reactions.get_by_id('EX_e-Biomass_drain_dark').bounds = (0, 0)
         final_model.reactions.get_by_id('EX_e-Biomass_drain_light').bounds = (0, 0)
         final_model.reactions.get_by_id('EX_leaf_biomass_drain').bounds = (0, 0)
@@ -284,8 +278,8 @@ class DielModel:
         # RUBISCO CONSTRAINT
         q = 3
         same_flux = final_model.problem.Constraint(final_model.reactions.get_by_id(
-            'RIBULOSE-BISPHOSPHATE-CARBOXYLASE-RXN__chlo_leaf_light').flux_expression - final_model.reactions.get_by_id(
-            'RXN-961__chlo_leaf_light').flux_expression * q, lb=0, ub=0)
+            'RIBULOSE-BISPHOSPHATE-CARBOXYLASE-RXN__chlo_leaf_light').flux_expression -
+            final_model.reactions.get_by_id('RXN-961__chlo_leaf_light').flux_expression * q, lb=0, ub=0)
 
         final_model.add_cons_vars(same_flux)
 

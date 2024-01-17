@@ -277,7 +277,7 @@ def get_aa_perc_from_genome_and_transc(protein_file: str, list_aa: list, expr_fi
     protein_file: str
         fasta file of the protein sequence
     list_aa: list
-        list of amino acids in the sequence
+        amino acids in the sequence
     expr_file: str
         csv file with transcriptomics data with the following structure:
             protein identifier (same identifier of the fasta file),expression
@@ -309,36 +309,3 @@ def get_aa_perc_from_genome_and_transc(protein_file: str, list_aa: list, expr_fi
         aa_perc[aa] = aa_counts[aa] / total
 
     return aa_perc
-
-
-if __name__ == '__main__':
-    prots = "grapevine_genome_files/protein_vvinif.faa"
-    # transc = 'grapevine_genome_files/gene_expression_ecoli.csv'
-    dna_seq = "grapevine_genome_files/GCF_000003745.3_12X_genomic.fna"
-    rna_seq = "grapevine_genome_files/grapevine_all_rRNA.faa"
-
-    # get_perc_from_genome(sequence_file=prots, molecule='lipids')
-
-    # get_aa_perc_from_genome_and_transc(protein_file=prots, expr_file=transc)
-
-    # protein
-    # result = get_mmol_gDW(sequence_file=prots, comp_biomass=0.401, molecule='protein')
-    # print(result)
-    # result2 = get_mmol_g(sequence_file=prots, molecule='protein')
-    # print(result2)
-
-    # dna
-    # result = get_mmol_gDW(sequence_file=dna_seq, comp_biomass=0.003, molecule='DNA')
-    # print(result)
-    # result2 = get_mmol_g(sequence_file=dna_seq, molecule='DNA')
-    # print(result2)
-
-    # rna
-    # result = get_mmol_gDW(sequence_file=rna_seq, comp_biomass=0.004, molecule='RNA')
-    # print(result)
-    # result2 = get_mmol_g(sequence_file=rna_seq, molecule='RNA')
-    # print(result2)
-
-    # convert_to_ids(comp_file="biomass/protein_mmolg_composition.csv", molecule='Protein')
-    # convert_to_ids(comp_file="biomass/DNA_mmolg_composition.csv", molecule='DNA')
-    # convert_to_ids(comp_file="biomass/RNA_mmolg_composition.csv", molecule='RNA')

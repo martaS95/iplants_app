@@ -1,17 +1,15 @@
 import os.path
-from cobra.io import read_sbml_model
-import requests
-import zipfile
-from io import BytesIO
 import logging
 import time
 import datetime
 import json
+import zipfile
+from io import BytesIO
 from typing import Dict
-from src.utils.config import PROJECT_PATH
+import requests
 import pandas as pd
-import itertools
-
+from cobra.io import read_sbml_model
+from src.utils.config import PROJECT_PATH
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -215,7 +213,6 @@ class Transyt:
 
         fic = open(transyt_file, 'r')
         line = fic.readline()
-        i = 0
         while line:
             if not line.startswith('>') and not line.startswith('\n'):
                 ec = line[0]
@@ -226,13 +223,8 @@ class Transyt:
                         ecs[ec].append(transp)
             line = fic.readline()
 
-        react_list = [ecs[x] for x in ecs]
-
-        print(len(set(list(itertools.chain.from_iterable(react_list)))))
-
-        # with open(os.path.join(self.output_folder, 'tcs.json'), 'w') as fp:
-        #     json.dump(ecs, fp)
-
+        with open(os.path.join(self.output_folder, 'tcs.json'), 'w') as fp:
+            json.dump(ecs, fp)
 
 
 if __name__ == '__main__':

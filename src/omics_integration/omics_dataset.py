@@ -2,7 +2,6 @@ import os
 import pandas as pd
 import numpy as np
 from utils.config import OMICS_DATADIR
-from Bio import SeqIO
 from cobra.io import read_sbml_model
 
 
@@ -11,6 +10,7 @@ class OmicsDataset:
     Class to define and preprocess the omics_integration dataset to use for integration with models
     Some methods of this class are specific for the dataset under analysis (GSE36128) - mapping probes to gene ids and
     different annotation versions
+    Others are specific for the same dataset but extract from GREAT database
     """
 
     def __init__(self, dataset_id: str, samples: list = None, genes: list = None):
@@ -254,14 +254,6 @@ class OmicsDataset:
             else:
                 dic_genes[new_gene_id].append(prot_id)
 
-        # recs = SeqIO.parse(proteins_file, 'fasta')
-        # for rec in recs:
-        #     rec_id, suff = rec.id.split('_')
-        #     if rec_id not in rec_ids:
-        #         rec_ids[rec_id] = [suff]
-        #     else:
-        #         rec_ids[rec_id].append(suff)
-
         new_rows = []
         new_index = []
 
@@ -381,9 +373,8 @@ class OmicsDataset:
         self.samples = ['leaf', 'stem', 'berry_green', 'berry_mature']
 
         self.data = pd.DataFrame(np.log2(self.data.values + 1.1), index=self.data.index, columns=self.data.columns)
-        # self.data = pd.DataFrame(self.data.values + 1, index=self.data.index, columns=self.data.columns)
 
-        metadata = pd.read_excel(os.path.join(OMICS_DATADIR, ds_id, 'UPDATE', ds_id + '_metadata.xlsx'))
+        metadata = pd.read_excel(os.path.join(OMICS_DATADIR, self.dataset_id, self.dataset_id + '_metadata.xlsx'))
         tissues = set(metadata['tissue'])
         samples = []
         col_names = []
@@ -398,10 +389,6 @@ class OmicsDataset:
                 new_name = tissue + '_' + descp[i][:-5] + '_' + str(year[i])
                 col_names.append(new_name)
                 i += 3
-
-        # for i in range(len(samples)):
-        #     if 'GSM2627693' in samples[i]:
-        #         samples[i].remove('GSM2627693')
 
         mean_rep_cols = []
         for cols in samples:
@@ -495,8 +482,6 @@ def join_feature_counts():
                            index_col=0)
     genes = tpm_file.index
 
-    # print(genes)
-
     files1 = os.listdir(project1)
     files2 = os.listdir(project2)
 
@@ -567,6 +552,7 @@ def replicate_same_ids() -> pd.DataFrame:
 
     return data
 
+
 def remove_replicates() -> pd.DataFrame:
     """
     Removes the replicates for each sample by calculating the mean.
@@ -575,11 +561,6 @@ def remove_replicates() -> pd.DataFrame:
     self.data: pd.Dataframe
        mean values of expression data for each sample without replicates
     """
-    samples = ['berry_green', 'berry_mature']
-
-    # data = pd.DataFrame(np.log2(self.data.values + 1.1), index=self.data.index, columns=self.data.columns)
-    # self.data = pd.DataFrame(self.data.values + 1, index=self.data.index, columns=self.data.columns)
-
     data = pd.read_csv('C:/Users/BiSBII/Documents/MM_ML/data/GREAT_LOG_TPM_GSE98923_MODEL_GENES.csv',
                        index_col=0)
 
@@ -607,10 +588,6 @@ def remove_replicates() -> pd.DataFrame:
             col_names.append(new_name)
             i += 3
 
-    # for i in range(len(samples)):
-    #     if 'GSM2627693' in samples[i]:
-    #         samples[i].remove('GSM2627693')
-
     mean_rep_cols = []
     for cols in samples:
         for col in cols:
@@ -625,46 +602,4 @@ def remove_replicates() -> pd.DataFrame:
     df_mean_noreps.index = data.index
 
     df_mean_noreps.to_csv('C:/Users/BiSBII/Documents/MM_ML/data/GREAT_LOG_TPM_GSE98923_MODEL_PROTEINS_NOREPS2.csv')
-
-if __name__ == '__main__':
-    remove_replicates()
-    # replicate_same_ids()
-    # ds_id = 'RNAseq'
-    # omics_ds = OmicsDataset(dataset_id=ds_id, samples=[])
-    # omics_ds.data = pd.DataFrame(np.log2(omics_ds.data.values + 1.1), index=omics_ds.data.index,
-    #                              columns=omics_ds.data.columns)
-    # omics_ds.data.to_csv(omics_ds.data_file)
-
-    # join_feature_counts()
-
-    # omics_ds.remove_replicates()
-    # join_data()
-    # path = os.path.join(OMICS_DATADIR, 'RNAseq', 'all_data')
-    # final_df = pd.read_csv(os.path.join(path, 'RNASeq_all.csv'), index_col=0)
-    # final_df = final_df.dropna(how='all')
-
-    # path = os.path.join(OMICS_DATADIR, 'RNAseq', 'UPDATE')
-    # ds1 = pd.read_csv(os.path.join(path, 'GREAT_TPM_MODEL_GENES.csv'), index_col=0)
-
-
-    # data_file = os.path.join(OMICS_DATADIR, ds_id, ds_id + '_initial.csv')
-    # omics_ds.data = pd.read_csv(data_file, index_col=0)
-    # omics_ds.replace_v1_v4(mapping_file='new_annot_mapping.csv')
-    # prot_file = 'C:/Users/BiSBII/Documents/plantdb/genome_files/vvinif2023/protein.faa'
-    # omics_ds.replicate_same_ids(proteins_file=prot_file)
-    # omics_ds.data.index = [x.split('.')[0] for x in omics_ds.data.index]
-    # omics_ds.data.to_csv(omics_ds.data_file)
-    # print(omics_ds.data.describe())
-    # omics_ds.remove_replicates()
-    # omics_ds.replace_v1ids_locus(mapping_file=os.path.join(OMICS_DATADIR, 'GSE36128',
-    #                                                        'ids_mapping_update_refseq.xlsx'))
-    # print(new_df.shape)
-    # new_df.to_csv(os.path.join(OMICS_DATADIR, ds_id, ds_id + '_na.csv'))
-    # omics_ds.replace_locusid_proteins(mapping_file=os.path.join(OMICS_DATADIR, 'GSE36128',
-    #                                                             'mapping_locus_proteinid.csv'))
-    # dataset = omics_ds.data
-    # genes = dataset.index
-
-
-
-
+    return df_mean_noreps

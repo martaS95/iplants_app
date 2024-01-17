@@ -2,13 +2,12 @@ import os
 import scipy as sp
 from scipy.stats import sem, hypergeom
 import statsmodels.api
-from cobra.sampling import ACHRSampler, OptGPSampler
+from cobra.sampling import ACHRSampler
 from cobra.io import read_sbml_model
 from utils.config import PROJECT_PATH
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from cobra.flux_analysis import pfba
 
 
 class DFA:
@@ -57,10 +56,10 @@ class DFA:
         Returns
         -------
         self.sampled_fluxes: dict
-            dict with the sampled fluxes created (pandas dataframe) as values
+            sampled fluxes created (pandas dataframe) as values
         """
 
-        # sampling_dic = {}
+        sampling_dic = {}
 
         for tissue in self.specific_models:
             modelname = self.specific_models[tissue]
@@ -73,18 +72,12 @@ class DFA:
                 model_obj = read_sbml_model(model_path)
                 model_obj.objective = self.objectives[tissue]
 
-                # sampling = ACHRSampler(model_obj, thinning=thinning, n_jobs=n_jobs)
-                try:
-                    sampling = OptGPSampler(model_obj, thinning=thinning, processes=6)
-                    df_sampling = sampling.sample(1000)
-                    df_sampling.to_csv(os.path.join(self.results_folder, '%s_sampling.csv' % modelname))
-                except:
-                    pass
+                df_sampling = ACHRSampler(model_obj, thinning=thinning, n_jobs=n_jobs)
 
-            # sampling_dic[modelname] = df_sampling
+            sampling_dic[modelname] = df_sampling
 
-        # self.sampled_fluxes = sampling_dic
-        # return self.sampled_fluxes
+        self.sampled_fluxes = sampling_dic
+        return self.sampled_fluxes
 
     def kstest(self):
         """
@@ -110,8 +103,6 @@ class DFA:
 
         for reac in rxns2_unique:
             sampled_fluxes1[reac] = [0.0000000] * sampled_fluxes2.shape[0]
-
-        # rxns_common = rxns1.intersection(rxns2)
 
         rxns_common = set(sampled_fluxes1.columns)
 
@@ -332,7 +323,6 @@ def bootstrapCI(rxn: pd.Series):
 
 
 def get_sampling_fluxes():
-    import random
     folder = os.path.join(PROJECT_PATH, 'reconstruction_results', 'vvinif2023', 'results_troppo', 'ALL_BERRY',
                           'dfa')
 
@@ -342,8 +332,6 @@ def get_sampling_fluxes():
 
     for f in files:
         df = pd.read_csv(os.path.join(folder, f), index_col=0)
-        # list_index = random.sample(list(df.index), 1000)
-        # subdf = df.loc[list_index, :]
         subdf = df
         subdf.index = [f + '_' + str(x) for x in df.index]
         all_fluxes.append(subdf)
@@ -385,46 +373,6 @@ if __name__ == '__main__':
 
     paths = os.path.join(PROJECT_PATH, 'reconstruction_results', model_id, 'pathways.csv')
 
-    # obj = 'e-Biomass_vvinif2023__cyto'
-
-    # obj = {'leaf': 'e-Biomass_vvinif2023__cyto', 'stem': 'e-Biomass_vvinif2023__cyto',
-    #        'berry_green': 'e-Biomass_vvinif2023__cyto', 'berry_mature': 'e-Biomass_vvinif2023__cyto'}
-
-    # default_models = {'leaf': 'leaf_t6_default_fastcore_0_3_4', 'stem': 'stem_t6_default_fastcore_0_3_4',
-    #                   'berry_green': 'berry_green_t6_default_fastcore_0_3_4',
-    #                   'berry_mature': 'berry_mature_t6_default_fastcore_0_3_4'}
-    #
-    # global_models = {'leaf': 'leaf_t0_Global_fastcore_0_2_4', 'stem': 'stem_t0_Global_fastcore_0_2_4',
-    #                  'berry_green': 'berry_green_t0_Global_fastcore_0_2_4',
-    #                  'berry_mature': 'berry_mature_t0_Global_fastcore_0_2_4'}
-    #
-    # local1_models_5050 = {'leaf': 'leaf_t0_Local1_fastcore_0_2_2', 'stem': 'stem_t0_Local1_fastcore_0_2_2',
-    #                       'berry_green': 'berry_green_t0_Local1_fastcore_0_2_2',
-    #                       'berry_mature': 'berry_mature_t0_Local1_fastcore_0_2_2'}
-    #
-    # local1_models_5075 = {'leaf': 'leaf_t0_Local1_fastcore_0_2_3', 'stem': 'stem_t0_Local1_fastcore_0_2_3',
-    #                       'berry_green': 'berry_green_t0_Local1_fastcore_0_2_3',
-    #                       'berry_mature': 'berry_mature_t0_Local1_fastcore_0_2_3'}
-
-    # local2_models = {'leaf': 'leaf_t0_Local2_fastcore_1_3_2', 'stem': 'stem_t0_Local2_fastcore_1_3_2',
-    #                  'berry_green': 'berry_green_t0_Local2_fastcore_1_3_2',
-    #                  'berry_mature': 'berry_mature_t0_Local2_fastcore_1_3_2'}
-
-    # local2_models = {'leaf': 'leaf_drains', 'stem': 'stem_drains',
-    #                  'berry_green': 'berry_green_drains',
-    #                  'berry_mature': 'berry_mature_drains'}
-
-    # default_models = {'berry_mature': 'berry_mature_t6_default_fastcore_0_3_4'}
-    #
-    # global_models = {'berry_mature': 'berry_mature_t0_Global_fastcore_0_2_4'}
-    #
-    # local1_models_5050 = {'berry_mature': 'berry_mature_t0_Local1_fastcore_0_2_2'}
-    #
-    # local1_models_5075 = {'berry_mature': 'berry_mature_t0_Local1_fastcore_0_2_3'}
-    #
-    # local2_models = {'berry_mature': 'berry_mature_t0_Local2_fastcore_1_3_2'}
-    #
-
     models_folder = os.path.join(PROJECT_PATH, 'reconstruction_results', model_id, 'results_troppo', dataset_id,
                                  'reconstructed_models')
 
@@ -435,85 +383,13 @@ if __name__ == '__main__':
 
     obj = {x: 'e-Biomass_vvinif2023__cyto' for x in model_files}
 
-    # for model in model_files:
+    for model in model_files:
 
-    obj_cls = DFA(modelid=model_id, datasetid=dataset_id, specific_models=models_dic, models_objective=obj,
-                  pathways_map=paths)
-    obj_cls.sampling()
+        obj_cls = DFA(modelid=model_id, datasetid=dataset_id, specific_models=models_dic, models_objective=obj,
+                      pathways_map=paths)
+        obj_cls.sampling()
 
     # complete_reactions_dfa(base_file, dfa_dir)
 
     # get_dfa_reactions()
     # get_sampling_fluxes()
-
-    # pair_models1 = {'leaf': local2_models['leaf'], 'stem': local2_models['stem']}
-    # pair_models2 = {'leaf': local2_models['leaf'], 'berry_green':  local2_models['berry_green']}
-    # pair_models3 = {'leaf': local2_models['leaf'], 'berry_mature': local2_models['berry_mature']}
-    # pair_models4 = {'stem': local2_models['stem'], 'berry_green': local2_models['berry_green']}
-    # pair_models5 = {'stem': local2_models['stem'], 'berry_mature': local2_models['berry_mature']}
-    # pair_models6 = {'berry_mature': local2_models['berry_mature'],
-    #                 'berry_green': local2_models['berry_green']}
-
-    # all_pairs = [pair_models1, pair_models2, pair_models3, pair_models4, pair_models5, pair_models6]
-    # all_pairs = [pair_models6]
-
-    # pair_models1 = {'leaf_1': 'leaf_t0_Local2_fastcore_1', 'stem_1': 'stem_t0_Local2_fastcore_1'}
-    # pair_models2 = {'leaf_1': 'leaf_t0_Local2_fastcore_1', 'berry_green_1': 'berry_green_t0_Local2_fastcore_1'}
-    # pair_models3 = {'leaf_1': 'leaf_t0_Local2_fastcore_1', 'berry_mature_1': 'berry_mature_t0_Local2_fastcore_1'}
-    # pair_models4 = {'stem_1': 'stem_t0_Local2_fastcore_1', 'berry_green_1': 'berry_green_t0_Local2_fastcore_1'}
-    # pair_models5 = {'stem_1': 'stem_t0_Local2_fastcore_1', 'berry_mature_1': 'berry_mature_t0_Local2_fastcore_1'}
-    # pair_models6 = {'berry_mature_1': 'berry_mature_t0_Local2_fastcore_1', 'berry_green_1':
-    #     'berry_green_t0_Local2_fastcore_1'}
-    #
-    # pair_models12 = {'leaf': 'leaf_t0_Local2_fastcore_all_drains_t', 'stem': 'stem_t0_Local2_fastcore_all_drains_t'}
-    # pair_models22 = {'leaf': 'leaf_t0_Local2_fastcore_all_drains_t', 'berry_green': 'berry_green_t0_Local2_fastcore_all_drains_t'}
-    # pair_models32 = {'leaf': 'leaf_t0_Local2_fastcore_all_drains_t', 'berry_mature': 'berry_mature_t0_Local2_fastcore_all_drains_t'}
-    # pair_models42 = {'stem': 'stem_t0_Local2_fastcore_all_drains_t', 'berry_green': 'berry_green_t0_Local2_fastcore_all_drains_t'}
-    # pair_models52 = {'stem': 'stem_t0_Local2_fastcore_all_drains_t', 'berry_mature': 'berry_mature_t0_Local2_fastcore_all_drains_t'}
-    # pair_models62 = {'berry_mature': 'berry_mature_t0_Local2_fastcore_all_drains_t', 'berry_green':
-    #     'berry_green_t0_Local2_fastcore_all_drains_t'}
-    #
-    # pair_models13 = {'leaf_global': 'leaf_t0_Global_fastcore', 'stem_global': 'stem_t0_Global_fastcore'}
-    # pair_models23 = {'leaf_global': 'leaf_t0_Global_fastcore', 'berry_green_global': 'berry_green_t0_Global_fastcore'}
-    # pair_models33 = {'leaf_global': 'leaf_t0_Global_fastcore', 'berry_mature_global': 'berry_mature_t0_Global_fastcore'}
-    # pair_models43 = {'stem_global': 'stem_t0_Global_fastcore', 'berry_green_global': 'berry_green_t0_Global_fastcore'}
-    # pair_models53 = {'stem_global': 'stem_t0_Global_fastcore', 'berry_mature_global': 'berry_mature_t0_Global_fastcore'}
-    # pair_models63 = {'berry_mature_global': 'berry_mature_t0_Global_fastcore', 'berry_green_global':
-    #     'berry_green_t0_Global_fastcore'}
-
-    # # pair_models1 = {'leaf': 'leaf_t4_default_fastcore', 'stem': 'stem_t4_default_fastcore'}
-    # # pair_models2 = {'leaf': 'leaf_t4_default_fastcore', 'berry_green': 'berry_green_t4_default_fastcore'}
-    # # pair_models3 = {'leaf': 'leaf_t4_default_fastcore', 'berry_mature': 'berry_mature_t4_default_fastcore'}
-    # # pair_models4 = {'stem': 'stem_t4_default_fastcore', 'berry_green': 'berry_green_t4_default_fastcore'}
-    # # pair_models5 = {'stem': 'stem_t4_default_fastcore', 'berry_mature': 'berry_mature_t4_default_fastcore'}
-    # # pair_models6 = {'berry_mature': 'berry_mature_t4_default_fastcore', 'berry_green': 'berry_green_t4_default_fastcore'}
-    #
-    # all_pairs = [pair_models12, pair_models22, pair_models32, pair_models42, pair_models52, pair_models62]
-
-    # pair1 = {'leaf': 'leaf', 'stem': 'stem'}
-    # pair2 = {'leaf': 'leaf', 'berry_green': 'berry_green'}
-    # pair3 = {'leaf': 'leaf', 'berry_mature': 'berry_mature'}
-    # pair4 = {'stem': 'stem', 'berry_green': 'berry_green'}
-    # pair5 = {'stem': 'stem', 'berry_mature': 'berry_mature'}
-    # pair6 = {'berry_mature': 'berry_mature', 'berry_green': 'berry_green'}
-    # #
-    #
-    # # pair1 = {'human': 'HumanGEM'}
-    # fix_pairs = [pair1, pair2, pair3, pair4, pair5, pair6]
-    #
-    # obj = {'leaf': 'e-Biomass_vvinif2023__cyto', 'stem': 'e-Biomass_vvinif2023__cyto',
-    #        'berry_green': 'e-Biomass_vvinif2023__cyto', 'berry_mature': 'e-Biomass_vvinif2023__cyto',
-    #        'leaf_1': 'e-Biomass_vvinif2023__cyto', 'stem_1': 'e-Biomass_vvinif2023__cyto',
-    #        'berry_green_1': 'e-Biomass_vvinif2023__cyto', 'berry_mature_1': 'e-Biomass_vvinif2023__cyto',
-    #        'berry_mature_same': 'e-Biomass_vvinif2023__cyto',
-    #        'leaf_global': 'e-Biomass_vvinif2023__cyto', 'stem_global': 'e-Biomass_vvinif2023__cyto',
-    #        'berry_green_global': 'e-Biomass_vvinif2023__cyto', 'berry_mature_global': 'e-Biomass_vvinif2023__cyto'
-    #        }
-
-    # path_list = os.path.join(PROJECT_PATH, 'reconstruction_results', model_id, 'pathways.csv')
-    #
-    # for pair in all_pairs:
-    #     obj_cls = DFA(modelid=model_id, datasetid=dataset_id, specific_models=pair, models_objective=obj,
-    #                   pathways_map=path_list)
-    #
-    #     obj_cls.run_complete_dfa()
