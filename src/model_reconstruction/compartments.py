@@ -99,8 +99,3 @@ class Compartments:
         self.loctree_res = loctree_dic
         return self.loctree_res
 
-
-if __name__ == '__main__':
-    folder = 'C:/Users/BiSBII/OneDrive - Universidade do Minho (1)/PycharmProjects/grapevine_model_update'
-    comps = Compartments(results_folder=folder)
-    comps.parse_results_wolfpsort(wolfpsort_output='wolfres.txt')

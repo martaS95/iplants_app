@@ -3,7 +3,7 @@ from typing import List, Optional, Literal
 import pandas as pd
 import cobra.io
 
-from utils.config import PROJECT_PATH
+from src.utils.config import PROJECT_PATH
 from omics_dataset import OmicsDataset
 from omics_processing import thresholding_filter
 from troppo_integration import troppo_omics_integration

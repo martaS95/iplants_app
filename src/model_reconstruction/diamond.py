@@ -8,6 +8,7 @@ from typing import Dict, Optional
 import requests
 from Bio import SeqIO
 from Bio.Blast import NCBIXML
+from src.utils.config import DiamondAPI
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -41,7 +42,7 @@ class Diamond:
         """
 
         if self.run_type == 'diamondp':
-            url_connection = "http://rosalind.di.uminho.pt:6082/iPlantsSubmission/DiamondP-iPlants/" + self.email
+            url_connection = DiamondAPI.diamondp_run_link + self.email
 
             protein_file = os.path.join(self.genome_path, 'protein.faa')
 
@@ -52,7 +53,7 @@ class Diamond:
             fasta = open(protein_file, 'rb')
 
         else:
-            url_connection = "http://rosalind.di.uminho.pt:6082/iPlantsSubmission/DiamondX-iPlants/" + self.email
+            url_connection = DiamondAPI.diamondx_run_link + self.email
 
             genomic_file = os.path.join(self.genome_path, 'genomic.fna')
 
@@ -79,7 +80,7 @@ class Diamond:
 
             time.sleep(10)
 
-            status_url = "http://rosalind.di.uminho.pt:6082/status/" + self.email + "/" + subid
+            status_url = DiamondAPI.status_link + self.email + "/" + subid
 
             status = requests.get(status_url)
 
@@ -91,7 +92,7 @@ class Diamond:
                 status = requests.get(status_url)
                 time.sleep(20)
 
-            download_url = "http://rosalind.di.uminho.pt:6082/download/" + self.email + "/" + subid
+            download_url = DiamondAPI.download_link + self.email + "/" + subid
 
             res = requests.get(download_url)
 

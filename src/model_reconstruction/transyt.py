@@ -9,7 +9,7 @@ from typing import Dict
 import requests
 import pandas as pd
 from cobra.io import read_sbml_model
-from src.utils.config import PROJECT_PATH
+from src.utils.config import PROJECT_PATH, TransytAPI
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -66,7 +66,7 @@ class Transyt:
             args_list.append(value)
 
         url = '/'.join(args_list)
-        url_connection = "https://transyt.bio.di.uminho.pt/submitMerlinPlugin/" + url
+        url_connection = TransytAPI.run_link + url
 
         genome = open(self.protein, "rb")
         model = open(self.model, "rb")
@@ -76,7 +76,7 @@ class Transyt:
         if r_submit.status_code == 202 or r_submit.status_code == 201:
             text = r_submit.json()
             subid = str(text['submissionID'])
-            status_url = "https://transyt.bio.di.uminho.pt/status/" + str(subid) + "/True"
+            status_url = TransytAPI.status_link + str(subid) + "/True"
             status = requests.get(status_url)
 
             if status.status_code not in [200, 201, 202]:
@@ -87,7 +87,7 @@ class Transyt:
                 status = requests.get(status_url)
                 time.sleep(120)
 
-            download_url = "https://transyt.bio.di.uminho.pt/download/" + str(subid)
+            download_url = TransytAPI.download_link + str(subid)
 
             results = requests.get(download_url)
 
@@ -225,13 +225,3 @@ class Transyt:
 
         with open(os.path.join(self.output_folder, 'tcs.json'), 'w') as fp:
             json.dump(ecs, fp)
-
-
-if __name__ == '__main__':
-    path = "C:/Users/BiSBII/OneDrive - Universidade do Minho (1)/PycharmProjects/grapevine_model/" \
-             "grapevine_genome_files/protein.faa"
-    drmodel = "C:/Users/BiSBII/Documents/plantdb/reconstruction_results/vvinif2021_draft.xml"
-    output = os.path.join(PROJECT_PATH, 'reconstruction_results', 'vvinif2023', 'transporters')
-    tr = Transyt(modelid='vvinif2023', protein_file=path, draft_model=drmodel, taxid=29760, output_folder=output)
-    # tr.run_transyt()
-    tr.get_tc_distribution()

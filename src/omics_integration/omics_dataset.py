@@ -1,8 +1,10 @@
 import os
 import pandas as pd
 import numpy as np
-from utils.config import OMICS_DATADIR
+from src.utils.config import OMICS_DATADIR
 from cobra.io import read_sbml_model
+
+# This script has specific functions to pre-process the omics datasets used in this thesis
 
 
 class OmicsDataset:
@@ -32,10 +34,10 @@ class OmicsDataset:
         self.original_data = None
         self._data = None
 
-        if not os.path.exists(os.path.join(OMICS_DATADIR, dataset_id, 'UPDATE')):
+        if not os.path.exists(os.path.join(OMICS_DATADIR, dataset_id)):
             os.makedirs(os.path.join(OMICS_DATADIR, dataset_id))
 
-        self.data_file = os.path.join(OMICS_DATADIR, dataset_id, 'UPDATE', dataset_id + '.csv')
+        self.data_file = os.path.join(OMICS_DATADIR, dataset_id, dataset_id + '.csv')
 
         # if the file exists, loads it, otherwise preprocessing methods should be run
         # to get the final omics_integration dataset
@@ -228,13 +230,13 @@ class OmicsDataset:
 
         return self.data
 
-    def replicate_same_ids(self, proteins_file: str = None) -> pd.DataFrame:
+    def replicate_same_ids(self, model_file: str) -> pd.DataFrame:
         """
         Get the v4 annotation for all the proteins for each gene
         Parameters
         ----------
-        proteins_file: str, optional
-            faa file with the protein sequences in the genome
+        model_file: str
+            metabolic model file
 
         Returns
         -------
@@ -242,8 +244,7 @@ class OmicsDataset:
             dataset with v4 ids as index
         """
 
-        model = read_sbml_model('C:/Users/BiSBII/Documents/plantdb/reconstruction_results/vvinif2023/'
-                                'vvinif2023_FINAL.xml')
+        model = read_sbml_model(model_file)
 
         dic_genes = {}
 
@@ -399,7 +400,7 @@ class OmicsDataset:
         df_mean_noreps.columns = col_names
         df_mean_noreps.index = self.data.index
 
-        df_mean_noreps.to_csv(os.path.join(OMICS_DATADIR, self.dataset_id, 'UPDATE',
+        df_mean_noreps.to_csv(os.path.join(OMICS_DATADIR, self.dataset_id,
                                            self.dataset_id + 'GREAT_LOGTPM100_noreps.csv'))
 
         join_samples = []
@@ -470,15 +471,15 @@ class OmicsDataset:
 
 
 def join_feature_counts():
-    datafolder = os.path.join(OMICS_DATADIR, 'RNASeq', 'UPDATE', 'RAW_counts')
+    datafolder = os.path.join(OMICS_DATADIR, 'RNASeq', 'RAW_counts')
     project1 = os.path.join(datafolder, 'FeatureCounts_PRJNA386889')
     project2 = os.path.join(datafolder, 'FeatureCounts_PRJNA383160')
 
-    metafile = os.path.join(OMICS_DATADIR, 'RNASeq', 'UPDATE', 'RNASeq_metadata.xlsx')
+    metafile = os.path.join(OMICS_DATADIR, 'RNASeq', 'RNASeq_metadata.xlsx')
     metadata = pd.read_excel(metafile, index_col=0)
     allsamples = metadata.index
 
-    tpm_file = pd.read_csv(os.path.join(OMICS_DATADIR, 'RNASeq', 'UPDATE', 'GREAT_TPM_MODEL_GENES.csv'),
+    tpm_file = pd.read_csv(os.path.join(OMICS_DATADIR, 'RNASeq', 'GREAT_TPM_MODEL_GENES.csv'),
                            index_col=0)
     genes = tpm_file.index
 
@@ -507,9 +508,13 @@ def join_feature_counts():
     all_counts.to_csv(os.path.join(datafolder, 'raw_counts_model_genes.csv'))
 
 
-def replicate_same_ids() -> pd.DataFrame:
+def replicate_same_ids(model_file: str) -> pd.DataFrame:
     """
     Get the v4 annotation for all the proteins for each gene
+    Parameters
+    ----------
+    model_file: str
+            metabolic model file
 
     Returns
     -------
@@ -517,10 +522,9 @@ def replicate_same_ids() -> pd.DataFrame:
         dataset with v4 ids as index
     """
 
-    model = read_sbml_model('C:/Users/BiSBII/Documents/plantdb/reconstruction_results/vvinif2023/'
-                            'vvinif2023_FINAL.xml')
+    model = read_sbml_model(model_file)
 
-    data = pd.read_csv('C:/Users/BiSBII/Documents/MM_ML/data/GREAT_LOG_TPM_GSE98923_MODEL_GENES.csv',
+    data = pd.read_csv(os.path.join(OMICS_DATADIR, 'RNASeq', 'GREAT_LOG_TPM_GSE98923_MODEL_GENES.csv'),
                        index_col=0)
 
     dic_genes = {}
@@ -546,7 +550,7 @@ def replicate_same_ids() -> pd.DataFrame:
     new_df = pd.DataFrame(new_rows, columns=data.columns)
     new_df.index = new_index
 
-    new_df.to_csv('C:/Users/BiSBII/Documents/MM_ML/data/GREAT_LOG_TPM_GSE98923_MODEL_PROTEINS.csv')
+    new_df.to_csv(os.path.join(OMICS_DATADIR, 'RNASeq', 'GREAT_LOG_TPM_GSE98923_MODEL_PROTEINS.csv'))
 
     data = new_df
 
@@ -561,10 +565,10 @@ def remove_replicates() -> pd.DataFrame:
     self.data: pd.Dataframe
        mean values of expression data for each sample without replicates
     """
-    data = pd.read_csv('C:/Users/BiSBII/Documents/MM_ML/data/GREAT_LOG_TPM_GSE98923_MODEL_GENES.csv',
+    data = pd.read_csv(os.path.join(OMICS_DATADIR, 'RNASeq', 'GREAT_LOG_TPM_GSE98923_MODEL_GENES.csv'),
                        index_col=0)
 
-    metadata = pd.read_excel('C:/Users/BiSBII/Documents/MM_ML/data/GSE98923_metadata.xlsx')
+    metadata = pd.read_excel(os.path.join(OMICS_DATADIR, 'RNASeq', 'GSE98923_metadata.xlsx'))
 
     mean_col = data[['SRR5560551', 'SRR5560552']].mean(axis=1)
     data['SRR5560551'] = mean_col
@@ -601,5 +605,5 @@ def remove_replicates() -> pd.DataFrame:
     df_mean_noreps.columns = col_names
     df_mean_noreps.index = data.index
 
-    df_mean_noreps.to_csv('C:/Users/BiSBII/Documents/MM_ML/data/GREAT_LOG_TPM_GSE98923_MODEL_PROTEINS_NOREPS2.csv')
+    df_mean_noreps.to_csv(os.path.join(OMICS_DATADIR, 'RNASeq', 'GREAT_LOG_TPM_GSE98923_MODEL_PROTEINS_NOREPS2.csv'))
     return df_mean_noreps

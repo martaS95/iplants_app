@@ -293,8 +293,6 @@ class DielModel:
 
         res = pfba(final_model)
 
-        print(final_model.summary(solution=res))
-
         data = []
         for ind, row in res.fluxes.iteritems():
             if row >= 1e-5 or row <= -1e-5:
@@ -308,14 +306,14 @@ class DielModel:
         model_name = self.multitissue_model_file.split('_')[-1].replace('.xml', '')
 
         df_simulation.to_csv(os.path.join(PROJECT_PATH, 'reconstruction_results', self.model_id,
-                                          'diel_simulations_maxbio_' + model_name + '.csv'), index=False)
+                                          'diel_simulations_' + model_name + '.csv'), index=False)
 
         return df_simulation
 
 
 if __name__ == '__main__':
     modelid = 'vvinif2023'
-    model = 'vvinif2023_multissue_mature.xml'
+    model = 'vvinif2023_multissue_green.xml'
     storage = {'chlo': {'Starch': (-10000, 10000)},
                'vacu': {'BETA-D-FRUCTOSE': (-10000, 10000),
                         'SUCROSE': (-10000, 10000),
@@ -345,5 +343,5 @@ if __name__ == '__main__':
                         'CYS': (0, 10000)}}
 
     dm = DielModel(model_id=modelid, model_file=model, storage_metabolites=storage)
-    # dm.create_diel()
+    dm.create_diel()
     dm.diel_model_simulation()
